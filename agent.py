@@ -11,7 +11,7 @@ from othello_shared import find_lines, get_possible_moves, get_score, play_move
 
 def eprint(*args, **kwargs): #you can use this for debugging, as it will print to sterr and not stdout
     print(*args, file=sys.stderr, **kwargs)
-    
+
 # Method to compute utility value of terminal state
 def compute_utility(board, color):
     #IMPLEMENT
@@ -29,27 +29,51 @@ def compute_heuristic(board, color): #not implemented, optional
 ############ MINIMAX ###############################
 def minimax_min_node(board, color, limit, caching = 0):
     #IMPLEMENT
-    return ((0,0),0)
+    minVal = float("inf")
+    move = None
+    moves = get_possible_moves(board,3-color)
+    if not moves:
+        return None, compute_utility(board,color)
+
+    for i,j in moves:
+        new_board = play_move(board,3-color,i,j)
+        t_move , score = minimax_max_node(new_board,color,limit,caching)
+        if score < minVal:
+            minVal = score
+            move = (i,j)
+    return (move,minVal)
 
 def minimax_max_node(board, color, limit, caching = 0): #returns highest possible utility
-    #IMPLEMENT
-    return ((0,0),0)
+    maxVal = float("-inf")
+    move = None
+    moves = get_possible_moves(board,color)
+    if not moves:
+        return None,compute_utility(board,color)
+    for i,j in moves:
+        new_board = play_move(board,color,i,j)
+        t_move,score = minimax_min_node(new_board,color,limit,caching)
+        if score > maxVal:
+            maxVal = score
+            move = (i,j)
+    return (move,maxVal)
 
 def select_move_minimax(board, color, limit, caching = 0):
     """
-    Given a board and a player color, decide on a move. 
+    Given a board and a player color, decide on a move.
     The return value is a tuple of integers (i,j), where
-    i is the column and j is the row on the board.  
+    i is the column and j is the row on the board.
 
     Note that other parameters are accepted by this function:
     If limit is a positive integer, your code should enfoce a depth limit that is equal to the value of the parameter.
-    Search only to nodes at a depth-limit equal to the limit.  If nodes at this level are non-terminal return a heuristic 
+    Search only to nodes at a depth-limit equal to the limit.  If nodes at this level are non-terminal return a heuristic
     value (see compute_utility)
     If caching is ON (i.e. 1), use state caching to reduce the number of state evaluations.
-    If caching is OFF (i.e. 0), do NOT use state caching to reduce the number of state evaluations.    
+    If caching is OFF (i.e. 0), do NOT use state caching to reduce the number of state evaluations.
     """
     #IMPLEMENT
-    return (0,0) #change this!
+    move , utility = minimax_max_node(board,color,limit,caching)
+
+    return move #change this!
 
 ############ ALPHA-BETA PRUNING #####################
 def alphabeta_min_node(board, color, alpha, beta, limit, caching = 0, ordering = 0):
@@ -62,18 +86,18 @@ def alphabeta_max_node(board, color, alpha, beta, limit, caching = 0, ordering =
 
 def select_move_alphabeta(board, color, limit, caching = 0, ordering = 0):
     """
-    Given a board and a player color, decide on a move. 
+    Given a board and a player color, decide on a move.
     The return value is a tuple of integers (i,j), where
-    i is the column and j is the row on the board.  
+    i is the column and j is the row on the board.
 
     Note that other parameters are accepted by this function:
     If limit is a positive integer, your code should enfoce a depth limit that is equal to the value of the parameter.
-    Search only to nodes at a depth-limit equal to the limit.  If nodes at this level are non-terminal return a heuristic 
+    Search only to nodes at a depth-limit equal to the limit.  If nodes at this level are non-terminal return a heuristic
     value (see compute_utility)
     If caching is ON (i.e. 1), use state caching to reduce the number of state evaluations.
-    If caching is OFF (i.e. 0), do NOT use state caching to reduce the number of state evaluations.    
-    If ordering is ON (i.e. 1), use node ordering to expedite pruning and reduce the number of state evaluations. 
-    If ordering is OFF (i.e. 0), do NOT use node ordering to expedite pruning and reduce the number of state evaluations. 
+    If caching is OFF (i.e. 0), do NOT use state caching to reduce the number of state evaluations.
+    If ordering is ON (i.e. 1), use node ordering to expedite pruning and reduce the number of state evaluations.
+    If ordering is OFF (i.e. 0), do NOT use node ordering to expedite pruning and reduce the number of state evaluations.
     """
     #IMPLEMENT
     return (0,0) #change this!
