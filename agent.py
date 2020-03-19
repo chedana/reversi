@@ -9,6 +9,7 @@ import time
 # You can use the functions in othello_shared to write your AI
 from othello_shared import find_lines, get_possible_moves, get_score, play_move
 
+cache = {}
 def eprint(*args, **kwargs): #you can use this for debugging, as it will print to sterr and not stdout
     print(*args, file=sys.stderr, **kwargs)
 
@@ -28,33 +29,54 @@ def compute_heuristic(board, color): #not implemented, optional
 
 ############ MINIMAX ###############################
 def minimax_min_node(board, color, limit, caching = 0):
+    global cache
+    current = color, board
+    if caching == 1 and current in cache:
+        return cache[current]
     #IMPLEMENT
+    if limit == 0:
+        return None,compute_utility(board,color)
     minVal = float("inf")
     move = None
-    moves = get_possible_moves(board,3-color)
+    anti_color = 3-color
+    moves = get_possible_moves(board,anti_color)
     if not moves:
+        if caching == 1:
+            cache[current] = None,compute_utility(board,color)
         return None, compute_utility(board,color)
 
     for i,j in moves:
-        new_board = play_move(board,3-color,i,j)
-        t_move , score = minimax_max_node(new_board,color,limit,caching)
+        new_board = play_move(board,anti_color,i,j)
+        t_move , score = minimax_max_node(new_board,color,limit-1,caching)
         if score < minVal:
             minVal = score
             move = (i,j)
+    if caching == 1:
+        cache[current] = (move,minVal)
     return (move,minVal)
 
 def minimax_max_node(board, color, limit, caching = 0): #returns highest possible utility
+    global cache
+    current = color, board
+    if caching == 1 and current in cache:
+        return cache[current]
+    if limit == 0:
+        return None,compute_utility(board,color)
     maxVal = float("-inf")
     move = None
     moves = get_possible_moves(board,color)
     if not moves:
+        if caching == 1:
+            cache[current] = None,compute_utility(board,color)
         return None,compute_utility(board,color)
     for i,j in moves:
         new_board = play_move(board,color,i,j)
-        t_move,score = minimax_min_node(new_board,color,limit,caching)
+        t_move,score = minimax_min_node(new_board,color,limit-1,caching)
         if score > maxVal:
             maxVal = score
             move = (i,j)
+    if caching == 1:
+        cache[current] = (move,maxVal)
     return (move,maxVal)
 
 def select_move_minimax(board, color, limit, caching = 0):
@@ -76,23 +98,32 @@ def select_move_minimax(board, color, limit, caching = 0):
     return move #change this!
 
 ############ ALPHA-BETA PRUNING #####################
-def node_ordering_heuristic(board,moves,color,ai_color,ordering,reverse):
-    if ordering:
-        return sorted(moves, key = lambda x: compute_utility(play_move(board,color,x[0],x[1]),ai_color),reverse = reverse)
-    return moves
+def node_ordering_heuristic(board,moves,color,anti_color,ordering,reverse):
+    return sorted(moves, key = lambda x: compute_utility(play_move(board,color,x[0],x[1]),anti_color),reverse = reverse)
+
 
 
 def alphabeta_min_node(board, color, alpha, beta, limit, caching = 0, ordering = 0):
-
-    moves = node_ordering_heuristic(board, get_possible_moves(board, 3 - color), 3 - color, color, ordering, False)
+    global cache
+    current = color, board
+    if caching == 1 and current in cache:
+        return cache[current]
+    if limit == 0:
+        return None,compute_utility(board,color)
+    anti_color = 3 - color
+    moves = None
+    if ordering:
+        moves = node_ordering_heuristic(board, get_possible_moves(board, anti_color), anti_color, color, ordering, False)
+    else:
+        moves = get_possible_moves(board, anti_color)
     if not moves:
-
-        res = None, compute_utility(board, color)
-        return res
+        if caching == 1:
+            cache[current] = None, compute_utility(board, color)
+        return None, compute_utility(board, color)
     minVal = float('inf')
     move = None
     for i,j in moves:
-        new_board = play_move(board, 3 - color, i, j)
+        new_board = play_move(board, anti_color, i, j)
         t_move, score = alphabeta_max_node(new_board, color, alpha, beta, limit - 1, caching)
         if score < minVal:
             minVal = score
@@ -101,16 +132,26 @@ def alphabeta_min_node(board, color, alpha, beta, limit, caching = 0, ordering =
             beta = minVal
             if beta <= alpha:
                 break
-    res = move, minVal
-    return res
+    if caching == 1:
+        cache[current] = move, minVal
+    return move, minVal
 
 def alphabeta_max_node(board, color, alpha, beta, limit, caching = 0, ordering = 0):
-
-    moves = node_ordering_heuristic(board, get_possible_moves(board, color), color, color, ordering, True)
+    global cache
+    current = color, board
+    if caching == 1 and current in cache:
+        return cache[current]
+    if limit == 0:
+        return None,compute_utility(board,color)
+    moves = None
+    if ordering:
+        moves = node_ordering_heuristic(board, get_possible_moves(board, color), color, color, ordering, True)
+    else:
+        moves = get_possible_moves(board, color)
     if not moves:
-
-        res = None, compute_utility(board, color)
-        return res
+        if caching == 1:
+            cache[current] = None, compute_utility(board, color)
+        return None, compute_utility(board, color)
     maxVal = float('-inf')
     move = None
     for i,j in moves:
@@ -123,8 +164,9 @@ def alphabeta_max_node(board, color, alpha, beta, limit, caching = 0, ordering =
             alpha = maxVal
             if beta <= alpha:
                 break
-    res = move, maxVal
-    return res
+    if caching == 1:
+        cache[current] = move, maxVal
+    return move, maxVal
 
 def select_move_alphabeta(board, color, limit, caching = 0, ordering = 0):
     """
